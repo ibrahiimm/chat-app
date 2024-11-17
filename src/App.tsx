@@ -1,14 +1,18 @@
 import React from 'react';
 import './App.css';
 
-import { Button, Alert } from 'react-bootstrap';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 
 const App: React.FC = () => {
   return (
-    <div className="container mt-5">
-      <Alert variant="primary">This is a Bootstrap alert!</Alert>
-      <Button variant="primary">Click Me</Button>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+      </Routes>
+    </Router>
   );
 };
 
