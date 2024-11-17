@@ -1,10 +1,11 @@
-// src/pages/LoginPage.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 import AuthForm from '../components/AuthForm';
 import { loginAPI } from '../api/auth';
 
 const LoginPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate(); // Initialize navigate
 
   const toggleForm = () => setIsLogin(!isLogin);
 
@@ -17,7 +18,9 @@ const LoginPage: React.FC = () => {
     try {
       const response = await loginAPI(data.username, data.password);
       alert(`Login Successful: ${response.data.message}`);
-    } catch (error: any) {
+      navigate('/chat'); // Navigate to the Chat page
+    } 
+    catch (error: any) {
       alert(`Login Failed: ${error.response?.data?.message || error.message}`);
     }
   };
