@@ -1,104 +1,122 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatArea from "../components/ChatArea";
+import { fetchChats, sendMessage, renameChat, deleteChat } from "../api/api";
 
-interface Chat {
+export interface Chat {
   id: string;
   name: string;
-  messages: string[];
+  messages: { sender: 'user' | 'ai'; text: string }[];
 }
 
 const ChatPage: React.FC = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false); // Add this state
+  const toggleCollapse = () => setIsCollapsed(!isCollapsed); // Function to toggle collapse
 
-  // Handle new chat creation (only after first message)
-  const handleNewChat = () => {
-    // Don't create duplicate 'New Chat' if already exists
-    if (chats.some((chat) => chat.name === "New Chat")) return;
+  // Load initial chats
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetchChats()
+      .then((data) => setChats(data))
+      .catch(() => setError("Failed to load chats."))
+      .finally(() => setLoading(false));
+  }, []);
 
-    const newChat: Chat = {
-      id: Date.now().toString(),
-      name: "New Chat",  // Temporary name, will be updated after the first message
-      messages: [],
-    };
+  const handleMessageSubmit = async (message: string) => {
+    if (!activeChatId) {
+      // If activeChatId is null, create a new chat.
+      const newChatId = `chat-${Date.now()}`;
+      const chatName = message.length > 5 ? message.substring(0, 5) : message; // Use first 5 characters or the entire message
+      const newChat: Chat = {
+        id: newChatId,
+        name: chatName || "New Chat", // Default name if empty
+        messages: [{ sender: "user", text: message }],
+      };
+  
+      setChats((prevChats) => [...prevChats, newChat]);
+      setActiveChatId(newChatId); // Set the new chat as active
+    } else {
+      // If activeChatId is not null, update the existing chat
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.id === activeChatId
+            ? {
+                ...chat,
+                messages: [
+                  ...chat.messages,
+                  { sender: "user", text: message },
+                ],
+              }
+            : chat
+        )
+      );
+    }
+  
+    try {
+      const response = await sendMessage(activeChatId || "", message); // Ensure activeChatId is not null
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.id === activeChatId
+            ? {
+                ...chat,
+                messages: [
+                  ...chat.messages,
+                  { sender: "ai", text: response.reply },
+                ],
+              }
+            : chat
+        )
+      );
+    } catch (error) {
+      setError("Failed to send message.");
+    }
+  };  
 
-    setChats([...chats, newChat]);
-    setActiveChatId(newChat.id);
+  const handleRenameChat = async (chatId: string, newName: string) => {
+    try {
+      const updatedChat = await renameChat(chatId, newName);
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.id === updatedChat.id ? updatedChat : chat
+        )
+      );
+    } catch (error) {
+      setError("Failed to rename chat.");
+    }
   };
 
-  // Select the active chat from the sidebar
-  const handleSelectChat = (id: string) => {
-    setActiveChatId(id);
-  };
-
-  // Rename a chat in the sidebar
-  const handleRenameChat = (id: string, newName: string) => {
-    setChats((prevChats) =>
-      prevChats.map((chat) =>
-        chat.id === id ? { ...chat, name: newName || "Untitled Chat" } : chat
-      )
-    );
-  };
-
-  // Delete a chat from the sidebar
-  const handleDeleteChat = (id: string) => {
-    setChats((prevChats) => prevChats.filter((chat) => chat.id !== id));
-    if (activeChatId === id) setActiveChatId(null);
-  };
-
-  // Submit message for an active chat
-  const handleMessageSubmit = (message: string) => {
-    if (!activeChatId) return;
-
-    setChats((prevChats) => {
-      return prevChats.map((chat) => {
-        if (chat.id === activeChatId) {
-          const isFirstMessage = chat.messages.length === 0;
-          if (isFirstMessage) {
-            // Set chat name based on first message
-            return { ...chat, name: message.slice(0, 20), messages: [message] };
-          } else {
-            return { ...chat, messages: [...chat.messages, message] };
-          }
-        }
-        return chat;
-      });
-    });
-  };
-
-  // Handle creating a new chat with a first message
-  const handleCreateChatWithMessage = (message: string) => {
-    const newChat: Chat = {
-      id: Date.now().toString(),
-      name: message.slice(0, 20),  // Set chat name from message
-      messages: [message],
-    };
-
-    setChats([...chats, newChat]);
-    setActiveChatId(newChat.id);
-  };
-
-  const toggleCollapse = () => {
-    setIsCollapsed((prevState) => !prevState);
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      await deleteChat(chatId);
+      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatId));
+      if (activeChatId === chatId) setActiveChatId(null);
+    } catch (error) {
+      setError("Failed to delete chat.");
+    }
   };
 
   return (
     <div className="d-flex" style={{ height: "100vh" }}>
       <Sidebar
         chats={chats}
-        onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
+        onNewChat={() => setActiveChatId(null)}
+        onSelectChat={(id) => setActiveChatId(id)}
         onRenameChat={handleRenameChat}
         onDeleteChat={handleDeleteChat}
-        isCollapsed={isCollapsed}
-        toggleCollapse={toggleCollapse}
+        isCollapsed={isCollapsed} // Pass the missing prop
+        toggleCollapse={toggleCollapse} // Pass the missing prop
       />
       <ChatArea
         activeChatId={activeChatId}
-        onFirstMessage={handleMessageSubmit}
-        onCreateChat={handleCreateChatWithMessage}
+        chats={chats}
+        onSendMessage={handleMessageSubmit}
+        loading={loading}
+        error={error}
       />
     </div>
   );
