@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import Sidebar from "../components/Sidebar";
 import ChatArea from "../components/ChatArea";
-import { fetchChats, sendMessage, renameChat, deleteChat } from "../api/api";
 
 export interface Chat {
   id: string;
   name: string;
-  messages: { sender: 'user' | 'ai'; text: string }[];
+  messages: { sender: "user" | "ai"; text: string }[];
 }
 
 const ChatPage: React.FC = () => {
@@ -14,90 +14,103 @@ const ChatPage: React.FC = () => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false); // Add this state
-  const toggleCollapse = () => setIsCollapsed(!isCollapsed); // Function to toggle collapse
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate(); // Initialize navigate
 
-  // Load initial chats
+  const toggleCollapse = () => setIsCollapsed(!isCollapsed);
+
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchChats()
+    fetch("http://localhost:3002/api/chats")
+      .then((response) => response.json())
       .then((data) => setChats(data))
       .catch(() => setError("Failed to load chats."))
       .finally(() => setLoading(false));
   }, []);
 
   const handleMessageSubmit = async (message: string) => {
-    if (!activeChatId) {
-      // If activeChatId is null, create a new chat.
-      const newChatId = `chat-${Date.now()}`;
-      const chatName = message.length > 5 ? message.substring(0, 5) : message; // Use first 5 characters or the entire message
-      const newChat: Chat = {
-        id: newChatId,
-        name: chatName || "New Chat", // Default name if empty
-        messages: [{ sender: "user", text: message }],
-      };
-  
-      setChats((prevChats) => [...prevChats, newChat]);
-      setActiveChatId(newChatId); // Set the new chat as active
-    } else {
-      // If activeChatId is not null, update the existing chat
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
-          chat.id === activeChatId
-            ? {
-                ...chat,
-                messages: [
-                  ...chat.messages,
-                  { sender: "user", text: message },
-                ],
-              }
-            : chat
-        )
-      );
-    }
-  
-    try {
-      const response = await sendMessage(activeChatId || "", message); // Ensure activeChatId is not null
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
-          chat.id === activeChatId
-            ? {
-                ...chat,
-                messages: [
-                  ...chat.messages,
-                  { sender: "ai", text: response.reply },
-                ],
-              }
-            : chat
-        )
-      );
-    } catch (error) {
-      setError("Failed to send message.");
-    }
-  };  
+    if (!message.trim()) return;
 
-  const handleRenameChat = async (chatId: string, newName: string) => {
-    try {
-      const updatedChat = await renameChat(chatId, newName);
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
-          chat.id === updatedChat.id ? updatedChat : chat
-        )
-      );
-    } catch (error) {
-      setError("Failed to rename chat.");
+    const accessToken = localStorage.getItem("access_token"); // Retrieve token
+    if (!accessToken) {
+      setError("User is not authenticated.");
+      return;
+    }
+
+    if (!activeChatId) {
+      const chatName = message.slice(0, 5) || "New Chat";
+      try {
+        const response = await fetch("http://localhost:3002/api/send_prompt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ query: message, newChat: 1, newChatName: chatName }),
+        });
+        const { message: aiResponse, chatId } = await response.json();
+        const newChat: Chat = {
+          id: chatId,
+          name: chatName,
+          messages: [
+            { sender: "user", text: message },
+            { sender: "ai", text: aiResponse },
+          ],
+        };
+        setChats((prevChats) => [...prevChats, newChat]);
+        setActiveChatId(chatId);
+      } catch {
+        setError("Failed to create new chat.");
+      }
+    } else {
+      try {
+        const response = await fetch("http://localhost:3002/api/send_prompt", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ query: message, chatID: activeChatId }),
+        });
+        const { message: aiResponse } = await response.json();
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.id === activeChatId
+              ? {
+                  ...chat,
+                  messages: [
+                    ...chat.messages,
+                    { sender: "user", text: message },
+                    { sender: "ai", text: aiResponse },
+                  ],
+                }
+              : chat
+          )
+        );
+      } catch {
+        setError("Failed to send message.");
+      }
     }
   };
 
-  const handleDeleteChat = async (chatId: string) => {
-    try {
-      await deleteChat(chatId);
-      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatId));
-      if (activeChatId === chatId) setActiveChatId(null);
-    } catch (error) {
-      setError("Failed to delete chat.");
-    }
+  const handleRenameChat = (id: string, newName: string) => {
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === id ? { ...chat, name: newName } : chat
+      )
+    );
+  };
+
+  const handleDeleteChat = (id: string) => {
+    setChats((prevChats) => prevChats.filter((chat) => chat.id !== id));
+    if (activeChatId === id) setActiveChatId(null);
+  };
+
+  // Implementing onLogout function
+  const onLogout = () => {
+    localStorage.removeItem("access_token"); // Remove the access token
+    navigate("/login"); // Navigate to the login page
   };
 
   return (
@@ -108,8 +121,8 @@ const ChatPage: React.FC = () => {
         onSelectChat={(id) => setActiveChatId(id)}
         onRenameChat={handleRenameChat}
         onDeleteChat={handleDeleteChat}
-        isCollapsed={isCollapsed} // Pass the missing prop
-        toggleCollapse={toggleCollapse} // Pass the missing prop
+        isCollapsed={isCollapsed}
+        toggleCollapse={toggleCollapse}
       />
       <ChatArea
         activeChatId={activeChatId}
@@ -117,6 +130,7 @@ const ChatPage: React.FC = () => {
         onSendMessage={handleMessageSubmit}
         loading={loading}
         error={error}
+        onLogout={onLogout} // Pass the onLogout handler here
       />
     </div>
   );

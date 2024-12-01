@@ -17,16 +17,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onSubmit, toggleForm }) =>
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isLogin) {
-      onSubmit({ username, password });
-    } 
-    else {
+      onSubmit({ email, password }); // For login, only send email and password
+    } else {
       if (password !== confirmPassword) {
         alert('Passwords do not match');
         return;
       }
-      onSubmit({ email, username, password });
+      onSubmit({ email, username, password }); // For signup, send email, username, and password
     }
   };
+  
 
   const handleToggleForm = () => {
     setShowForm(false); // Start fade-out
@@ -93,15 +93,15 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onSubmit, toggleForm }) =>
             )}
             {isLogin && (
               <Form.Group className="mb-3" controlId="formUsername">
-                <Form.Label>Username</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </Form.Group>
+              <Form.Label>{isLogin ? 'Username' : 'Email address'}</Form.Label>
+              <Form.Control
+                type={isLogin ? 'text' : 'email'}
+                placeholder={isLogin ? 'Enter username' : 'Enter email'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </Form.Group>            
             )}
             <Form.Group className="mb-3" controlId="formPassword">
               <Form.Label>Password</Form.Label>
