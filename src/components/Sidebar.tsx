@@ -10,6 +10,7 @@ interface SidebarProps {
   onDeleteChat: (id: string) => void;
   isCollapsed: boolean;
   toggleCollapse: () => void;
+  activeChatId: string | null; // Added activeChatId to track the selected chat
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -20,10 +21,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDeleteChat,
   isCollapsed,
   toggleCollapse,
+  activeChatId, // Get activeChatId as prop
 }) => {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(activeChatId); // Start with activeChatId as selected
 
   // Ref for the input field to detect outside clicks
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -38,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleNewChat = () => {
     setSelectedChatId(null); // Deselect the current chat
-    onNewChat();
+    onNewChat(); // Trigger new chat creation in parent
   };
 
   // Close the renaming input if user clicks outside
@@ -58,29 +60,31 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Modified handler to select a new chat after deletion
   const handleDeleteChat = (chatId: string) => {
+    // Delete the chat
     onDeleteChat(chatId);
-
-    // After deletion, select a new chat if available, otherwise create a new one
-    if (chats.length > 1) {
-      const nextChat = chats[0].id !== chatId ? chats[0] : chats[1];
-      setSelectedChatId(nextChat.id);
-      onSelectChat(nextChat.id);
-    } else {
-      handleNewChat(); // Create a new chat if no chats remain
-    }
+  
+    // After deleting, trigger creating a new chat just like the new chat button
+    handleNewChat(); // This will automatically create a new chat and reset the selected chat
   };
+  
+
+  useEffect(() => {
+    setSelectedChatId(activeChatId); // Update selected chat when activeChatId changes
+  }, [activeChatId]);
 
   return (
     <div
-      className={`d-flex flex-column bg-light border-end ${isCollapsed ? "collapsed" : ""}`}
+      className={`d-flex flex-column bg-light border-end ${
+        isCollapsed ? "sidebar-collapsed" : ""
+      }`}
       style={{
         width: isCollapsed ? "70px" : "300px",
-        overflowY: "auto",
-        height: "100%",
         transition: "width 0.3s ease",
-        background: "linear-gradient(to bottom, #6a11cb, #2575fc)", // Gradient background color
-        color: "black", // All text will be black
-        padding: "2px",
+        height: "100%",
+        overflow: "hidden",
+        flexShrink: 0,
+        background: "linear-gradient(to bottom, #6a11cb, #2575fc)",
+        color: "white",
       }}
     >
       {/* Collapse Button */}
@@ -141,16 +145,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             {chats.map((chat) => (
               <ListGroup.Item
                 key={chat.id}
-                className={`d-flex justify-content-between align-items-center ${
-                  selectedChatId === chat.id ? "bg-primary text-white" : ""
-                }`}
+                className={`d-flex justify-content-between align-items-center ${selectedChatId === chat.id ? "bg-primary text-white" : ""}`}
                 style={{
-                  padding: "10px 20px", // Padding for x and y axes
+                  padding: "10px 20px",
                   marginBottom: "5px",
                   cursor: "pointer",
                   transition: "background-color 0.3s ease",
-                  backgroundColor: selectedChatId === chat.id ? "#4e8df7" : "transparent", // Selected background color (Light blue when selected)
-                  position: "relative", // To position delete button correctly
+                  backgroundColor: selectedChatId === chat.id ? "#4e8df7" : "transparent",
+                  position: "relative",
                 }}
                 onClick={() => {
                   setSelectedChatId(chat.id);
@@ -164,21 +166,27 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {editingChatId === chat.id ? (
                   <>
                     <Form.Control
-                      ref={inputRef} // Attach the input field ref
+                      ref={inputRef}
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRename(chat.id);
+                        }
+                      }}
                       style={{
-                        color: "black", // Input text color (Black)
-                        backgroundColor: "transparent", // Transparent background
-                        borderColor: "#2575fc", // Border color (Primary blue)
+                        color: "black", // Better text color
+                        backgroundColor: "white", // White background for better visibility
+                        borderColor: "#2575fc", // Primary blue border
+                        boxShadow: "0 0 5px rgba(0, 0, 0, 0.1)", // Subtle shadow
                       }}
                     />
                     <Button
                       variant="link"
                       onClick={() => handleRename(chat.id)}
                       style={{
-                        color: "#2575fc", // Button color for check icon (Primary blue)
+                        color: "#2575fc", // Button color for check icon
                         fontWeight: "bold",
                         paddingLeft: "10px",
                       }}
@@ -197,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           right: "10px",
                           top: "50%",
                           transform: "translateY(-50%)", // Vertically center the dots with the text
-                          zIndex: 999, // Ensure the three dots are on top (Top layer)
+                          zIndex: 999,
                         }}
                       >
                         <Dropdown align="end">
@@ -205,23 +213,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                             variant="link"
                             id="dropdown-basic"
                             style={{
-                              color: "#555", // Dark grey color for the three dots
-                              padding: "0", // No extra padding
-                              fontSize: "20px", // Ensure the icon is the right size
+                              color: "#555",
+                              padding: "0",
+                              fontSize: "20px",
                             }}
                           >
                             <BsThreeDots />
                           </Dropdown.Toggle>
-
+              
                           <Dropdown.Menu>
                             <Dropdown.Item
-                              onClick={() => setEditingChatId(chat.id)}
+                              onClick={() => {
+                                setEditingChatId(chat.id); // Trigger editing for the selected chat
+                                setEditName(chat.name); // Preload the chat name into the input field
+                              }}
                               style={{ color: "black" }}
                             >
                               Rename
                             </Dropdown.Item>
                             <Dropdown.Item
-                              onClick={() => handleDeleteChat(chat.id)} // Use the modified delete handler
+                              onClick={() => handleDeleteChat(chat.id)}
                               style={{ color: "black" }}
                             >
                               Delete
@@ -232,7 +243,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     )}
                   </>
                 )}
-              </ListGroup.Item>
+              </ListGroup.Item>            
             ))}
           </ListGroup>
         )}

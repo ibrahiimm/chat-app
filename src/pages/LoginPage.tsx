@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthForm from '../components/AuthForm';
 import axios from 'axios';
 
 const LoginPage: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isLogin, setIsLogin] = useState(location.pathname === '/login');
 
   const toggleForm = () => {
-    setIsLogin(!isLogin);
     if (isLogin) {
-      // Navigate to sign-up page when switching from login to signup
       navigate('/signup');
+      setIsLogin(false);
     } else {
-      // Navigate back to login page when switching from signup to login
       navigate('/login');
+      setIsLogin(true);
     }
   };
 
@@ -26,15 +26,12 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await axios.post('http://localhost:3001/sign_in', {
-        email: data.email, 
+        email: data.email,
         password: data.password,
       });
 
-      // Store the access token in localStorage after successful login
       localStorage.setItem("access_token", response.data.access_token);
       alert(`Login Successful`);
-
-      // Redirect to the chat page
       navigate('/chat');
     } 
     catch (error: any) {

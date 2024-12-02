@@ -22,7 +22,7 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch("http://localhost:3002/api/chats")
+    fetch("http://localhost:3003/api/chats")
       .then((response) => response.json())
       .then((data) => setChats(data))
       .catch(() => setError("Failed to load chats."))
@@ -41,7 +41,7 @@ const ChatPage: React.FC = () => {
     if (!activeChatId) {
       const chatName = message.slice(0, 5) || "New Chat";
       try {
-        const response = await fetch("http://localhost:3002/api/send_prompt", {
+        const response = await fetch("http://localhost:3003/api/send_prompt", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -58,14 +58,14 @@ const ChatPage: React.FC = () => {
             { sender: "ai", text: aiResponse },
           ],
         };
-        setChats((prevChats) => [...prevChats, newChat]);
+        setChats((prevChats) => [newChat, ...prevChats]); // New logic to add the new chat at the top
         setActiveChatId(chatId);
       } catch {
         setError("Failed to create new chat.");
       }
     } else {
       try {
-        const response = await fetch("http://localhost:3002/api/send_prompt", {
+        const response = await fetch("http://localhost:3003/api/send_prompt", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -123,6 +123,7 @@ const ChatPage: React.FC = () => {
         onDeleteChat={handleDeleteChat}
         isCollapsed={isCollapsed}
         toggleCollapse={toggleCollapse}
+        activeChatId={activeChatId}
       />
       <ChatArea
         activeChatId={activeChatId}
