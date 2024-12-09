@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import ChatArea from "../components/ChatArea";
 
@@ -15,25 +15,48 @@ const ChatPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch("http://localhost:3003/api/chats")
-      .then((response) => response.json())
-      .then((data) => setChats(data))
-      .catch(() => setError("Failed to load chats."))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchChats = async () => {
+      const accessToken = localStorage.getItem("access_token");
+      if (!accessToken) {
+        navigate("/login");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("http://localhost:3003/api/chats", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`, // Include the token in headers
+          },
+        });
+        const data = await response.json();
+        setChats(data.message || []); // Adjust as per the backend response structure
+      } catch {
+        setError("Failed to load chats.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChats();
+  }, [navigate]);
 
   const handleMessageSubmit = async (message: string) => {
     if (!message.trim()) return;
-  
-    const HARDCODED_TOKEN = "hardcoded_access_token"; // Use the hardcoded token here
-  
+
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+      navigate("/login");
+      return;
+    }
+
     if (!activeChatId) {
       const chatName = message.slice(0, 5) || "New Chat";
       try {
@@ -41,7 +64,7 @@ const ChatPage: React.FC = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${HARDCODED_TOKEN}`,
+            Authorization: `Bearer ${accessToken}`, // Include the token here
           },
           body: JSON.stringify({ query: message, newChat: 1, newChatName: chatName }),
         });
@@ -65,7 +88,7 @@ const ChatPage: React.FC = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${HARDCODED_TOKEN}`, // Use the hardcoded token here
+            Authorization: `Bearer ${accessToken}`, // Include the token here
           },
           body: JSON.stringify({ query: message, chatID: activeChatId }),
         });
@@ -89,7 +112,6 @@ const ChatPage: React.FC = () => {
       }
     }
   };
-  
 
   const handleRenameChat = (id: string, newName: string) => {
     setChats((prevChats) =>
@@ -104,10 +126,9 @@ const ChatPage: React.FC = () => {
     if (activeChatId === id) setActiveChatId(null);
   };
 
-  // Implementing onLogout function
   const onLogout = () => {
-    localStorage.removeItem("access_token"); // Remove the access token
-    navigate("/login"); // Navigate to the login page
+    localStorage.removeItem("access_token");
+    navigate("/login");
   };
 
   return (
@@ -128,7 +149,7 @@ const ChatPage: React.FC = () => {
         onSendMessage={handleMessageSubmit}
         loading={loading}
         error={error}
-        onLogout={onLogout} // Pass the onLogout handler here
+        onLogout={onLogout}
       />
     </div>
   );
