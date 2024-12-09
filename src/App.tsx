@@ -1,34 +1,18 @@
-// src/App.tsx
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ChatPage from './pages/ChatPage';
-import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Hardcoded token (ensure this matches the token used in your backend)
+  const HARDCODED_TOKEN = "hardcoded_access_token";
 
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    setIsAuthenticated(!!token);
-  }, []);
+  // Save the token in memory when the app starts (optional for testing localStorage behavior)
+  localStorage.setItem("access_token", HARDCODED_TOKEN);
 
   return (
     <Router>
       <Routes>
-        {/* Redirect / to /login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
-              <ChatPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<ChatPage />} />
       </Routes>
     </Router>
   );

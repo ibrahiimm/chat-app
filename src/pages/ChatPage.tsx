@@ -31,13 +31,9 @@ const ChatPage: React.FC = () => {
 
   const handleMessageSubmit = async (message: string) => {
     if (!message.trim()) return;
-
-    const accessToken = localStorage.getItem("access_token"); // Retrieve token
-    if (!accessToken) {
-      setError("User is not authenticated.");
-      return;
-    }
-
+  
+    const HARDCODED_TOKEN = "hardcoded_access_token"; // Use the hardcoded token here
+  
     if (!activeChatId) {
       const chatName = message.slice(0, 5) || "New Chat";
       try {
@@ -45,7 +41,7 @@ const ChatPage: React.FC = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${HARDCODED_TOKEN}`,
           },
           body: JSON.stringify({ query: message, newChat: 1, newChatName: chatName }),
         });
@@ -58,7 +54,7 @@ const ChatPage: React.FC = () => {
             { sender: "ai", text: aiResponse },
           ],
         };
-        setChats((prevChats) => [newChat, ...prevChats]); // New logic to add the new chat at the top
+        setChats((prevChats) => [newChat, ...prevChats]);
         setActiveChatId(chatId);
       } catch {
         setError("Failed to create new chat.");
@@ -69,7 +65,7 @@ const ChatPage: React.FC = () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${HARDCODED_TOKEN}`, // Use the hardcoded token here
           },
           body: JSON.stringify({ query: message, chatID: activeChatId }),
         });
@@ -93,6 +89,7 @@ const ChatPage: React.FC = () => {
       }
     }
   };
+  
 
   const handleRenameChat = (id: string, newName: string) => {
     setChats((prevChats) =>
