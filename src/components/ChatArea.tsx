@@ -2,9 +2,20 @@ import React, { useState, useEffect, useRef } from "react";
 import { Form, Button, InputGroup, Dropdown } from "react-bootstrap";
 import { BsFillSendFill, BsPersonCircle } from "react-icons/bs";
 
+interface Message {
+  sender: "user" | "ai";
+  text: string;
+}
+
+interface Chat {
+  id: string;
+  name: string;
+  messages: Message[];
+}
+
 interface ChatAreaProps {
   activeChatId: string | null;
-  chats: { id: string; name: string; messages: { sender: "user" | "ai"; text: string }[] }[];
+  chats: Chat[];
   onSendMessage: (message: string) => void;
   loading: boolean;
   error: string | null;
@@ -20,15 +31,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onLogout,
 }) => {
   const [input, setInput] = useState<string>("");
+
   const activeChat = chats.find((chat) => chat.id === activeChatId);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleSendMessage = () => {
     if (input.trim() === "") return;
-    onSendMessage(input.trim());
-    setInput("");
-  };
+    if (activeChatId) {
+      onSendMessage(input.trim());
+      setInput("");
+      setNewMessageReceived(true);
+    }
+  };  
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -37,24 +52,29 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
   };
 
+  const [newMessageReceived, setNewMessageReceived] = useState(false);
+
+  useEffect(() => {
+    if (newMessageReceived && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+      setNewMessageReceived(false); // Reset the state
+    }
+  }, [activeChat?.messages, newMessageReceived]);
+
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
+  }, [activeChat?.messages]);
+
+  useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [activeChat?.messages]);
+  }, [activeChat]);
 
   return (
-    <div
-      className="d-flex flex-column"
-      style={{
-        flex: 1, // Ensures this component takes up all available vertical space in its parent.
-        minWidth: "0", // Prevents horizontal overflow.
-        overflow: "hidden", // Keeps the layout clean by hiding any overflow.
-      }}
-    >
+    <div className="d-flex flex-column" style={{ flex: 1, minWidth: "0", overflow: "hidden" }}>
       {/* Chat header */}
       <div
         className="d-flex justify-content-between align-items-center p-3"
@@ -62,6 +82,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
           backgroundColor: "#f5f5f5",
           borderBottom: "1px solid #ddd",
           height: "60px",
+          position: "sticky",
+          top: 0,
+          zIndex: 1000,
         }}
       >
         <div style={{ fontWeight: "bold", fontSize: "16px" }}>Chat</div>
@@ -78,90 +101,113 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         </Dropdown>
       </div>
 
-      {/* Chat messages */}
+      {/* Chat content container */}
       <div
         className="flex-grow-1 overflow-auto"
         style={{
-          padding: "20px", // Padding to prevent message bubbles from touching the edges.
-          backgroundColor: "#f8f9fa",
-          maxHeight: "calc(100vh - 120px)", // Limits the height to the viewport minus header/footer.
+          display: "flex",
+          justifyContent: "center", // Centers the message area horizontally
+          backgroundColor: "transparent",
+          padding: "20px 0 20px", // Adds padding above and below
         }}
       >
-        {loading ? (
-          <div>Loading chats...</div>
-        ) : error ? (
-          <div style={{ color: "red" }}>{error}</div>
-        ) : activeChat ? (
-          activeChat.messages.map((message, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                justifyContent: message.sender === "user" ? "flex-end" : "flex-start",
-                marginBottom: "10px", // Spacing between messages.
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: message.sender === "user" ? "#d1e7dd" : "#e2e3e5",
-                  color: message.sender === "user" ? "#0f5132" : "#495057",
-                  padding: "10px 15px", // Padding inside each message bubble.
-                  borderRadius: "15px", // Rounded corners for message bubbles.
-                  maxWidth: "70%", // Prevents messages from stretching too wide.
-                  fontSize: "14px", // Adjust font size for readability.
-                  lineHeight: "1.5",
-                  wordBreak: "break-word", // Ensures long words wrap correctly.
-                  boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)", // Subtle shadow for better aesthetics.
-                }}
-              >
-                {message.text}
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="text-center text-muted">Select or create a chat.</div>
-        )}
-        <div ref={chatEndRef} />
+        <div
+          style={{
+            maxWidth: "60%",
+            width: "100%",
+            flex: "1",
+          }}
+        >
+          {/* Chat messages */}
+          <div style={{ padding: "0 20px", maxHeight: "calc(100vh - 120px)" }}>
+            {loading ? (
+              <div>Loading chats...</div>
+            ) : error ? (
+              <div style={{ color: "red" }}>{error}</div>
+            ) : activeChat ? (
+              activeChat.messages.map((message, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "flex",
+                    justifyContent: message.sender === "user" ? "flex-end" : "flex-start",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      backgroundColor: message.sender === "user" ? "#d1e7dd" : "#e2e3e5",
+                      color: message.sender === "user" ? "#0f5132" : "#495057",
+                      padding: "10px 15px",
+                      borderRadius: "15px",
+                      maxWidth: "100%",
+                      fontSize: "14px",
+                      lineHeight: "1.5",
+                      wordBreak: "break-word",
+                      boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    {message.text}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted">Select or create a chat.</div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+        </div>
       </div>
 
       {/* Message input */}
       <div
         className="p-3 bg-light"
         style={{
-          position: "sticky", // Keeps input fixed at the bottom.
+          position: "sticky",
           bottom: 0,
           borderTop: "1px solid #ddd",
+          display: "flex",
+          justifyContent: "center", // Centers the input field
+          backgroundColor: "#f8f9fa",
         }}
       >
-        <InputGroup>
-          <Form.Control
-            as="textarea"
-            rows={1}
-            placeholder="Type a message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            style={{
-              resize: "none", // Prevent resizing.
-              padding: "10px", // Padding for input text.
-              fontSize: "14px",
-            }}
-            ref={inputRef}
-          />
-          <Button
-            variant="primary"
-            onClick={handleSendMessage}
-            style={{
-              marginLeft: "10px", // Space between input and send button.
-              borderRadius: "50%",
-              padding: "10px 15px", // Circular button for the send icon.
-            }}
-          >
-            <BsFillSendFill />
-          </Button>
-        </InputGroup>
+        <div
+          style={{
+            maxWidth: "60%",
+            width: "100%",
+          }}
+        >
+          <InputGroup>
+            <Form.Control
+              as="textarea"
+              rows={1}
+              placeholder="Type a message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              style={{
+                resize: "none",
+                padding: "10px",
+                fontSize: "14px",
+              }}
+              ref={inputRef}
+            />
+            <Button
+              variant="primary"
+              onClick={handleSendMessage}
+              style={{
+                marginLeft: "10px",
+                borderRadius: "50%",
+                padding: "10px 15px",
+              }}
+            >
+              <BsFillSendFill />
+            </Button>
+          </InputGroup>
+        </div>
       </div>
     </div>
+
   );
 };
 
