@@ -73,13 +73,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     }
   }, [activeChat]);
 
-  useEffect(() => {
-    if (activeChatId && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [activeChatId]);
-  
-
   return (
     <div className="d-flex flex-column" style={{ flex: 1, minWidth: "0", overflow: "hidden" }}>
       {/* Chat header */}

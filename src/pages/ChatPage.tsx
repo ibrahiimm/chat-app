@@ -50,8 +50,8 @@ const ChatPage: React.FC = () => {
 
         setChats(
           data.message.map((chat: any) => ({
-            id: chat.chatID.toString(),
-            name: chat.chatName,
+            id: chat.chat_id.toString(),
+            name: chat.chat_name,
             messages: [], // Assuming no messages are preloaded
           }))
         );
