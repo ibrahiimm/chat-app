@@ -43,15 +43,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div
       style={{
-        width: isCollapsed ? "60px" : "300px",
-        backgroundColor: "#1f1f2e",
+        width: isCollapsed ? "70px" : "300px",
+        background: "linear-gradient(145deg, #1e1f3b, #15162b)",
         color: "white",
         display: "flex",
         flexDirection: "column",
         height: "100vh",
         overflow: "hidden",
         transition: "width 0.3s",
-        boxShadow: "4px 0 12px rgba(0, 0, 0, 0.5)",
+        boxShadow: "4px 0 15px rgba(0, 0, 0, 0.5)",
+        borderRadius: "0 12px 12px 0",
       }}
     >
       <div
@@ -60,7 +61,15 @@ const Sidebar: React.FC<SidebarProps> = ({
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
-        <span style={{ display: isCollapsed ? "none" : "block", fontWeight: "bold", fontSize: "1.2rem" }}>Chats</span>
+        <span
+          style={{
+            display: isCollapsed ? "none" : "block",
+            fontWeight: "bold",
+            fontSize: "1.4rem",
+          }}
+        >
+          Chats
+        </span>
         <Button
           variant="link"
           onClick={toggleCollapse}
@@ -88,14 +97,14 @@ const Sidebar: React.FC<SidebarProps> = ({
               className="d-flex justify-content-between align-items-center"
               style={{
                 cursor: "pointer",
-                borderRadius: "20px",
+                borderRadius: "12px",
                 margin: "5px 15px",
-                backgroundColor:
-                  chat.id === activeChatId ? "rgba(108, 117, 125, 0.3)" : "rgba(255, 255, 255, 0.05)",
+                backgroundColor: chat.id === activeChatId ? "#2b2c50" : "rgba(255, 255, 255, 0.05)",
                 boxShadow:
-                  chat.id === activeChatId ? "0 4px 10px rgba(108, 117, 125, 0.4)" : "none",
-                transition: "background-color 0.3s, box-shadow 0.3s",
+                  chat.id === activeChatId ? "0 4px 15px rgba(43, 44, 80, 0.8)" : "0 2px 6px rgba(0, 0, 0, 0.2)",
+                transition: "all 0.3s ease",
                 border: "none",
+                padding: "12px 18px",
               }}
             >
               {editingChatId === chat.id ? (
@@ -110,7 +119,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     color: "white",
                     border: "1px solid rgba(255, 255, 255, 0.3)",
                     borderRadius: "8px",
-                    backdropFilter: "blur(5px)",
                     padding: "5px 10px",
                     outline: "none",
                   }}
@@ -118,10 +126,8 @@ const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <span
                   style={{
-                    padding: "8px 15px",
-                    backgroundColor:
-                      chat.id === activeChatId ? "#6c757d" : "rgba(255, 255, 255, 0.1)",
-                    borderRadius: "20px",
+                    fontSize: "1rem",
+                    color: "white",
                     fontWeight: chat.id === activeChatId ? "bold" : "normal",
                   }}
                 >
@@ -133,7 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   variant="link"
                   size="sm"
                   onClick={() => setEditingChatId(chat.id)}
-                  style={{ color: "#adb5bd" }}
+                  style={{ color: "#adb5bd", marginRight: "5px" }}
                 >
                   <AiOutlineEdit />
                 </Button>
@@ -161,8 +167,17 @@ const Sidebar: React.FC<SidebarProps> = ({
             border: "none",
             padding: "0.75rem 1.25rem",
             borderRadius: "8px",
-            boxShadow: "0 4px 10px rgba(0, 123, 255, 0.3)",
+            boxShadow: "0 4px 15px rgba(0, 123, 255, 0.4)",
             fontSize: "1rem",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0, 123, 255, 0.6)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 123, 255, 0.4)";
           }}
         >
           <AiOutlinePlus />

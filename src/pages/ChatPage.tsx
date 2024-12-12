@@ -199,16 +199,28 @@ const ChatPage: React.FC = () => {
 
   const handleNewChatClick = () => {
     setIsNewChat(true);
-    setShowNewChatModal(true); // Show modal to input new chat name
+    setShowNewChatModal(true);
+    setActiveChatId(null); // Clear active chat
   };
+  
 
   const handleCreateNewChat = () => {
     if (newChatName.trim()) {
-      setShowNewChatModal(false); // Close modal after creating the chat
+      const newChat: Chat = {
+        id: Date.now().toString(), // Generate a unique ID
+        name: newChatName.trim(),
+        messages: [],
+      };
+  
+      setChats((prevChats) => [newChat, ...prevChats]);
+      setActiveChatId(newChat.id); // Set the new chat as active
+      setShowNewChatModal(false);
+      setNewChatName(""); // Reset chat name input
     } else {
       alert("Please enter a valid chat name.");
     }
   };
+  
 
   return (
     <div className="d-flex" style={{ height: "100vh" }}>
@@ -233,48 +245,47 @@ const ChatPage: React.FC = () => {
 
       {/* New Chat Modal */}
       {showNewChatModal && (
-        <div className="modal show d-block" tabIndex={-1} role="dialog">
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Enter New Chat Name</h5>
-                <button
-                  type="button"
-                  className="close"
-                  onClick={() => setShowNewChatModal(false)}
-                >
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div className="modal-body">
-                <input
-                  type="text"
-                  className="form-control"
-                  value={newChatName}
-                  onChange={(e) => setNewChatName(e.target.value)}
-                  placeholder="Enter chat name"
-                />
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowNewChatModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleCreateNewChat}
-                >
-                  Create Chat
-                </button>
-              </div>
-            </div>
-          </div>
+  <div className="modal show d-block" tabIndex={-1} role="dialog">
+    <div className="modal-dialog modal-dialog-centered" role="document">
+      <div className="modal-content shadow-lg rounded">
+        <div className="modal-header bg-primary text-white">
+          <h5 className="modal-title">Create a New Chat</h5>
+          <button
+            type="button"
+            className="btn-close btn-close-white"
+            onClick={() => setShowNewChatModal(false)}
+          ></button>
         </div>
-      )}
+        <div className="modal-body">
+          <input
+            type="text"
+            className="form-control form-control-lg"
+            value={newChatName}
+            onChange={(e) => setNewChatName(e.target.value)}
+            placeholder="Enter chat name..."
+          />
+        </div>
+        <div className="modal-footer">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowNewChatModal(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleCreateNewChat}
+          >
+            Create Chat
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
