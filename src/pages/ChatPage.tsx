@@ -74,6 +74,20 @@ const ChatPage: React.FC = () => {
       return;
     }
 
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === activeChatId
+          ? {
+              ...chat,
+              messages: [
+                ...chat.messages,
+                { sender: "user", text: message.trim() },
+              ],
+            }
+          : chat
+      )
+    );
+
     setLoading(true);
     setError(null);
 
@@ -121,7 +135,6 @@ const ChatPage: React.FC = () => {
                   ...chat,
                   messages: [
                     ...chat.messages,
-                    { sender: "user", text: message },
                     { sender: "ai", text: aiResponse },
                   ],
                 }

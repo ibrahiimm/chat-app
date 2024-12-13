@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Form, Button, InputGroup, Dropdown } from "react-bootstrap";
+import { Form, Button, InputGroup, Dropdown, Spinner } from "react-bootstrap";
 import { BsFillSendFill, BsPersonCircle } from "react-icons/bs";
 
 interface Message {
@@ -32,6 +32,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 }) => {
   const [input, setInput] = useState<string>("");
 
+  const [chatss, setChats] = useState<Chat[]>([]);
   const activeChat = chats.find((chat) => chat.id === activeChatId);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -43,7 +44,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       setInput("");
       setNewMessageReceived(true);
     }
-  };  
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -120,9 +121,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         >
           {/* Chat messages */}
           <div style={{ padding: "0 20px", maxHeight: "calc(100vh - 120px)" }}>
-            {loading ? (
-              <div>Loading chats...</div>
-            ) : error ? (
+            {error ? (
               <div style={{ color: "red" }}>{error}</div>
             ) : activeChat ? (
               activeChat.messages.map((message, index) => (
@@ -154,6 +153,34 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             ) : (
               <div className="text-center text-muted">Select or create a chat.</div>
             )}
+
+            {/* Loading spinner for AI response */}
+            {loading && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  marginBottom: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "#e2e3e5",
+                    color: "#495057",
+                    padding: "10px 15px",
+                    borderRadius: "15px",
+                    fontSize: "14px",
+                    lineHeight: "1.5",
+                    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <Spinner animation="border" variant="primary" size="sm" />
+                </div>
+              </div>
+            )}
+
             <div ref={chatEndRef} />
           </div>
         </div>
@@ -207,7 +234,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({
         </div>
       </div>
     </div>
-
   );
 };
 
