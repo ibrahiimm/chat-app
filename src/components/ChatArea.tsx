@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Form, Button, InputGroup, Dropdown, Spinner } from "react-bootstrap";
 import { BsFillSendFill, BsPersonCircle } from "react-icons/bs";
+import "../components/styles.css";
+
 
 interface Message {
   sender: "user" | "ai";
@@ -155,31 +157,68 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             )}
 
             {/* Loading spinner for AI response */}
-            {loading && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-start",
-                  marginBottom: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#e2e3e5",
-                    color: "#495057",
-                    padding: "10px 15px",
-                    borderRadius: "15px",
-                    fontSize: "14px",
-                    lineHeight: "1.5",
-                    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <Spinner animation="border" variant="primary" size="sm" />
-                </div>
-              </div>
-            )}
+            {/* Typing indicator for AI response */}
+{/* Loading animation for AI response */}
+{loading && (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "flex-start",
+      marginBottom: "10px",
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: "#e2e3e5",
+        color: "#495057",
+        padding: "10px 15px",
+        borderRadius: "15px",
+        fontSize: "14px",
+        lineHeight: "1.5",
+        boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: "5px",
+        }}
+      >
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            backgroundColor: "#0d6efd",
+            borderRadius: "50%",
+            animation: "typing 1.5s infinite",
+          }}
+        ></div>
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            backgroundColor: "#0d6efd",
+            borderRadius: "50%",
+            animation: "typing 1.5s infinite 0.2s",
+          }}
+        ></div>
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            backgroundColor: "#0d6efd",
+            borderRadius: "50%",
+            animation: "typing 1.5s infinite 0.4s",
+          }}
+        ></div>
+      </div>
+    </div>
+  </div>
+)}
+
+
 
             <div ref={chatEndRef} />
           </div>
